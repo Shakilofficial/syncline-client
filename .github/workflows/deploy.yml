@@ -1,0 +1,82 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js Application
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      - name: Deploy via SSH & SCP (Natively)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.PORT }} ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+          # Resolve target directory (checking permission for /var/www/syncline/syncline-client, fallback to home directory)
+          TARGET_DIR=$(ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} '
+            if mkdir -p /var/www/syncline/syncline-client 2>/dev/null; then
+              echo "/var/www/syncline/syncline-client"
+            else
+              mkdir -p "$HOME/syncline/syncline-client"
+              echo "$HOME/syncline/syncline-client"
+            fi
+          ')
+          echo "Target Directory on VPS: $TARGET_DIR"
+
+          # Pack .next (excluding cache) + public assets + config files into one compressed tarball
+          tar -czf deploy.tar.gz \
+            --exclude='.next/cache' \
+            .next public package.json package-lock.json ecosystem.config.js next.config.ts tsconfig.json
+
+          # Clean old build and public assets on remote to prevent storage accumulation
+          ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} "rm -rf $TARGET_DIR/.next $TARGET_DIR/public"
+
+          # Upload tarball
+          scp -i ~/.ssh/id_ed25519 -P ${{ secrets.PORT }} deploy.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:$TARGET_DIR/
+
+          # Extract, write .env, install and reload PM2 in one SSH session
+          ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.PORT }} ${{ secrets.USERNAME }}@${{ secrets.HOST }} 'bash -s' << EOF
+            cd "$TARGET_DIR"
+            echo "${{ secrets.ENV_FILE_CONTENT }}" > .env
+
+            # Extract tarball and clean up
+            tar -xzf deploy.tar.gz
+            rm -f deploy.tar.gz
+
+            command -v pm2 &>/dev/null || npm install -g pm2
+
+            npm ci --omit=dev
+
+            # Delete stale PM2 entries so IDs are always sequential from 0
+            pm2 delete syncline-client 2>/dev/null || true
+            pm2 start ecosystem.config.js
+            pm2 save
+          EOF
