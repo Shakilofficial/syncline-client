@@ -46,7 +46,7 @@
   --font-sans:    var(--font-google-sans-flex), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono:    var(--font-google-sans-flex), ui-monospace, SFMono-Regular, monospace;
   --font-heading: var(--font-google-sans-flex), system-ui, sans-serif;
-  --font-serif-display: var(--font-serif-display), Georgia, serif;
+  --font-serif-display: var(--font-serif-display), sans-serif;
 }
 
 :root {
