@@ -27,7 +27,7 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8000';
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://api.syncline.shakilhossain.tech';
     
     // Connect to WebSocket gateway
     const newSocket = io(socketUrl, {
