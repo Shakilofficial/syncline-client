@@ -34,7 +34,6 @@ const Header = () => {
   const { user, clearAuth } = useAuthStore();
   const { theme, setTheme } = useTheme();
 
-  // Unread notifications badge count
   const { data: notificationsData } = useQuery({
     queryKey: ['notifications', { status: 'unread' }],
     queryFn: async () => {
@@ -53,7 +52,7 @@ const Header = () => {
     try {
       await apiClient.post('/api/v1/auth/logout');
     } catch {
-      // Ignore logout endpoint errors
+      
     } finally {
       clearAuth();
       router.replace('/login');
@@ -65,14 +64,12 @@ const Header = () => {
     router.push(`/users/${user.id}`);
   };
 
-  // Safe initials — guard against empty/undefined name
   const initials = user?.name?.trim()
     ? user.name.trim().substring(0, 2).toUpperCase()
     : 'U';
 
   return (
     <header className="fixed inset-x-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/95 px-4 backdrop-blur-md">
-      {/* Left: Logo + sidebar toggle + workspace label */}
       <div className="flex items-center gap-3">
         {!isSidebarOpen && (
           <Button
@@ -94,11 +91,7 @@ const Header = () => {
           <span className="text-sm font-bold brand-gradient-text">Dashboard</span>
         </div>
       </div>
-
-
-      {/* Right: Theme + Bell + User */}
       <div className="flex items-center gap-2">
-        {/* Theme toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -109,8 +102,6 @@ const Header = () => {
           <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
-
-        {/* Notifications */}
         <Button
           variant="ghost"
           size="icon"
