@@ -1,19 +1,40 @@
 import type { Metadata } from "next";
-import { Syne, Google_Sans_Flex } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "@/components/providers";
 
-const syne = Syne({
-  subsets: ["latin"],
+const clashGrotesk = localFont({
+  src: [
+    {
+      path: "../../public/fonts/ClashGrotesk-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/ClashGrotesk-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/ClashGrotesk-Semibold.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/ClashGrotesk-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-serif-display",
   display: "swap",
 });
 
-const googleSansFlex = Google_Sans_Flex({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-google-sans-flex",
   display: "swap",
-  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
@@ -29,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${googleSansFlex.variable} ${syne.variable}`}
+      className={`h-full antialiased ${plusJakartaSans.variable} ${clashGrotesk.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
